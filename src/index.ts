@@ -1,10 +1,11 @@
-const path = require("path");
-const { version } = require("./package.json");
-const { readFileSync } = require("fs");
-const minimatch = require("minimatch");
+import path from "path";
+import { version } from "../package.json";
+import { readFileSync } from "fs";
+import minimatch from "minimatch";
 
-const find_contracts = require("@truffle/contract-sources");
-const Profiler = require("@truffle/compile-solidity/profiler");
+import find_contracts from "@truffle/contract-sources";
+import Profiler from "@truffle/compile-solidity/profiler";
+import TruffleConfig from "@truffle/config";
 
 const compiler = {
   name: "@truffle/compile-michelson",
@@ -15,12 +16,19 @@ const MICHELSON_PATTERN = "**/*.tz";
 
 // -------- TODO: Common with truffle-compile --------
 
-const compile = {};
+type CompileCallback = (
+  error?: any,
+  result?: any,
+  contractPaths?: Array<string>,
+  _compiler?: typeof compiler
+) => void;
+
+const compile: any = {};
 
 // contracts_directory: String. Directory where .tz files can be found.
 // quiet: Boolean. Suppress output. Defaults to false.
-compile.all = (options, callback) => {
-  find_contracts(options.contracts_directory, (err, files) => {
+compile.all = (options: TruffleConfig, callback: CompileCallback) => {
+  find_contracts(options.contracts_directory, (err: Error, files: Array<string>) => {
     if (err) return callback(err);
 
     options.paths = files;
@@ -34,14 +42,14 @@ compile.all = (options, callback) => {
 //      in the build directory to see what needs to be compiled.
 // quiet: Boolean. Suppress output. Defaults to false.
 // strict: Boolean. Return compiler warnings as errors. Defaults to false.
-compile.necessary = (options, callback) => {
+compile.necessary = (options: TruffleConfig, callback: CompileCallback) => {
   options.logger = options.logger || console;
 
-  Profiler.updated(options, (err, updated) => {
+  Profiler.updated(options, (err: Error, updated: Array<string>) => {
     if (err) return callback(err);
 
     if (updated.length === 0 && options.quiet !== true) {
-      return callback(null, [], {});
+      return callback(null, {}, []);
     }
 
     options.paths = updated;
@@ -49,7 +57,7 @@ compile.necessary = (options, callback) => {
   });
 };
 
-compile.display = (paths, { quiet, working_directory, logger }) => {
+compile.display = (paths: Array<string>, { quiet, working_directory, logger }: TruffleConfig) => {
   if (quiet !== true) {
     if (!Array.isArray(paths)) {
       paths = Object.keys(paths);
@@ -67,7 +75,7 @@ compile.display = (paths, { quiet, working_directory, logger }) => {
 // -------- End of common with truffle-compile --------
 
 // compile all options.paths
-function compileAll(options, callback) {
+function compileAll(options: TruffleConfig, callback: CompileCallback) {
   const callbackPassed = typeof callback === "function";
   options.logger = options.logger || console;
 
@@ -96,7 +104,7 @@ function compileAll(options, callback) {
     contracts.push(contractDefinition);
   }
 
-  const result = contracts.reduce((result, contract) => {
+  const result = contracts.reduce((result: any, contract: any) => {
     result[contract.contractName] = contract;
 
     return result;
@@ -107,9 +115,9 @@ function compileAll(options, callback) {
 }
 
 // Filter .tz files then forward to internal compile function
-function compileMichelson(options, callback) {
+function compileMichelson(options: TruffleConfig, callback: CompileCallback) {
   // filter out non-.tz paths
-  options.paths = options.paths.filter(path =>
+  options.paths = options.paths.filter((path: string) =>
     minimatch(path, MICHELSON_PATTERN)
   );
 
@@ -120,7 +128,7 @@ function compileMichelson(options, callback) {
 }
 
 // append .tz pattern to contracts_directory in options and return updated options
-function updateContractsDirectory(options) {
+function updateContractsDirectory(options: TruffleConfig) {
   return options.with({
     contracts_directory: path.join(
       options.contracts_directory,
@@ -130,12 +138,13 @@ function updateContractsDirectory(options) {
 }
 
 // wrapper for compile.all. only updates contracts_directory to find .tz
-compileMichelson.all = (options, callback) =>
+compileMichelson.all = (options: TruffleConfig, callback: CompileCallback) =>
   compile.all(updateContractsDirectory(options), callback);
 
 // wrapper for compile.necessary. only updates contracts_directory to find .tz
-compileMichelson.necessary = (options, callback) =>
+compileMichelson.necessary = (options: TruffleConfig, callback: CompileCallback) =>
   compile.necessary(updateContractsDirectory(options), callback);
 
 compile.with_dependencies = compileMichelson;
+export = compileMichelson;
 module.exports = compileMichelson;
