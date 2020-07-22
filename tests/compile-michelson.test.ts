@@ -1,7 +1,7 @@
-const path = require("path");
-const assert = require("assert");
-const Config = require("@truffle/config");
-const compile = require("../index");
+import path from "path";
+import assert from "assert";
+import TruffleConfig from "@truffle/config";
+import compile from "../src/index";
 
 describe(`michelson "compiler"`, () => {
   const defaultSettings = {
@@ -10,14 +10,14 @@ describe(`michelson "compiler"`, () => {
     all: true,
     _: []
   };
-  const config = new Config().merge(defaultSettings);
+  const config = new TruffleConfig().merge(defaultSettings);
 
   it(`"compiles" michelson contracts`, done => {
     compile.all(config, (err, contracts, paths) => {
       assert.equal(err, null, "Compiles with an error!");
 
       [contracts.MichelsonContract].forEach(contract => {
-        paths.forEach(path => {
+        paths!.forEach(path => {
           assert(
             [".tz"].some(extension => path.indexOf(extension) !== -1),
             "Paths should only be .tz files"
@@ -67,7 +67,7 @@ describe(`michelson "compiler"`, () => {
     compile.all(config, (err, contracts, paths) => {
       assert.equal(err, null, "Compiled with an error");
 
-      paths.forEach(path => {
+      paths!.forEach(path => {
         assert.equal(
           path.indexOf(".sol"),
           -1,
