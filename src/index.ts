@@ -9,7 +9,7 @@ import TruffleConfig from "@truffle/config";
 
 const compiler = {
   name: "@truffle/compile-michelson",
-  version: `${version}`
+  version: `${version}`,
 };
 
 const MICHELSON_PATTERN = "**/*.tz";
@@ -28,12 +28,15 @@ const compile: any = {};
 // contracts_directory: String. Directory where .tz files can be found.
 // quiet: Boolean. Suppress output. Defaults to false.
 compile.all = (options: TruffleConfig, callback: CompileCallback) => {
-  find_contracts(options.contracts_directory, (err: Error, files: Array<string>) => {
-    if (err) return callback(err);
+  find_contracts(
+    options.contracts_directory,
+    (err: Error, files: Array<string>) => {
+      if (err) return callback(err);
 
-    options.paths = files;
-    compile.with_dependencies(options, callback);
-  });
+      options.paths = files;
+      compile.with_dependencies(options, callback);
+    }
+  );
 };
 
 // contracts_directory: String. Directory where .tz files can be found.
@@ -57,13 +60,16 @@ compile.necessary = (options: TruffleConfig, callback: CompileCallback) => {
   });
 };
 
-compile.display = (paths: Array<string>, { quiet, working_directory, logger }: TruffleConfig) => {
+compile.display = (
+  paths: Array<string>,
+  { quiet, working_directory, logger }: TruffleConfig
+) => {
   if (quiet !== true) {
     if (!Array.isArray(paths)) {
       paths = Object.keys(paths);
     }
 
-    paths.sort().forEach(contract => {
+    paths.sort().forEach((contract) => {
       if (path.isAbsolute(contract)) {
         contract = `.${path.sep}${path.relative(working_directory, contract)}`;
       }
@@ -98,7 +104,7 @@ function compileAll(options: TruffleConfig, callback: CompileCallback) {
       sourcePath,
       source: sourceContents,
       michelson: sourceContents,
-      compiler
+      compiler,
     };
 
     contracts.push(contractDefinition);
@@ -133,7 +139,7 @@ function updateContractsDirectory(options: TruffleConfig) {
     contracts_directory: path.join(
       options.contracts_directory,
       MICHELSON_PATTERN
-    )
+    ),
   });
 }
 
@@ -142,8 +148,10 @@ compileMichelson.all = (options: TruffleConfig, callback: CompileCallback) =>
   compile.all(updateContractsDirectory(options), callback);
 
 // wrapper for compile.necessary. only updates contracts_directory to find .tz
-compileMichelson.necessary = (options: TruffleConfig, callback: CompileCallback) =>
-  compile.necessary(updateContractsDirectory(options), callback);
+compileMichelson.necessary = (
+  options: TruffleConfig,
+  callback: CompileCallback
+) => compile.necessary(updateContractsDirectory(options), callback);
 
 compile.with_dependencies = compileMichelson;
 export = compileMichelson;
